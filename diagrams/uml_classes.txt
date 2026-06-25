@@ -1,0 +1,86 @@
+@startuml
+' UML class diagram for core models (PlantUML) - fixed syntax
+
+class User {
+  -uid: String
+  -displayName: String
+  -email: String
+  -phone: String
+  -selectedRole: String
+  -createdAt: DateTime
+  -updatedAt: DateTime
+  +login()
+  +updateProfile()
+}
+
+class Child {
+  -id: String
+  -parent_uid: String
+  -name: String
+  -birthday: Date
+  -umur: int
+  -gender: String
+  +create()
+  +update()
+}
+
+class Activity {
+  -id: String
+  -parent_uid: String
+  -child_id: String
+  -type: String
+  -start_time: DateTime
+  -end_time: DateTime
+  +save()
+}
+
+class Schedule {
+  -id: String
+  -parent_uid: String
+  -child_id: String
+  -title: String
+  -cron: String
+  -reminder_time: DateTime
+  -active: boolean
+  +enable()
+  +disable()
+}
+
+class Report {
+  -id: String
+  -user_ref: String
+  -title: String
+  -content: String
+  +generate()
+}
+
+class GamificationData {
+  -id: String
+  -user_ref: String
+  -points: int
+  +addPoints()
+}
+
+class Session {
+  -token: String
+  -user_ref: String
+  -createdAt: DateTime
+  -expiresAt: DateTime
+}
+
+class LocationData {
+  -id: String
+  -child_id: String
+  -lat: double
+  -lon: double
+  -createdAt: DateTime
+}
+
+User "1" -- "*" Child : owns
+User "1" -- "*" Activity : creates
+User "1" -- "*" Schedule : creates
+User "1" -- "1" GamificationData : has
+Child "1" -- "*" Activity : records
+Child "1" -- "*" LocationData : has
+
+@enduml

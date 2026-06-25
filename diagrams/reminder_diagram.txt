@@ -1,0 +1,18 @@
+%% Reminder Flow Diagram - Patara AI
+%% Render with a Mermaid editor (https://mermaid.live)
+flowchart TD
+  Parent[Parent] --> OpenSchedules[Open Schedules Tab]
+  OpenSchedules --> CreateReminder{Create or Edit Reminder?}
+  CreateReminder -- Create --> FillReminder[Fill reminder details]
+  FillReminder --> SaveReminder[Save reminder]
+  SaveReminder --> ScheduleEngine[Schedule push / local notification]
+  ScheduleEngine --> SendPush[Send push reminder]
+  SendPush --> ChildReceive[Child receives reminder]
+  ChildReceive -->|Snooze| SnoozeAction[Snooze reminder]
+  ChildReceive -->|Complete| CompleteAction[Mark as done]
+  SnoozeAction --> ScheduleEngine
+  CompleteAction --> Analytics[Log completion for analytics]
+  Analytics --> ParentDashboard[Update parent dashboard]
+
+  classDef schedule fill:#fff3e0,stroke:#f57c00;
+  class OpenSchedules,CreateReminder,FillReminder,SaveReminder schedule;

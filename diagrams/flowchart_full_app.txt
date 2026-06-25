@@ -1,0 +1,103 @@
+# Flowchart (Mermaid syntax) - Full App Flow
+# Start to end overview for all user roles and major app modules.
+# Render with a Mermaid editor such as https://mermaid.live/.
+
+flowchart TD
+  Start[App Start] --> AuthCheck{Authenticated?}
+  AuthCheck -- No --> AuthScreen[Show Login / Signup]
+  AuthScreen --> AuthChoice{Signup or Login}
+  AuthChoice -->|Signup| Signup[Create account + choose role]
+  AuthChoice -->|Login| Login[Authenticate credentials]
+  AuthChoice -->|Forgot Password| Reset[Reset password flow]
+
+  Signup --> RoleSelect[Select role]
+  RoleSelect -->|parent| ParentSignup[Register Parent account]
+  RoleSelect -->|delegated_parent| DelegatedSignup[Register Delegated Parent account]
+  RoleSelect -->|child| ChildSignup[Register Child account]
+  RoleSelect -->|assistant| AssistantSignup[Register Assistant account]
+  RoleSelect -->|admin| AdminSignup[Register Admin account]
+
+  Login --> LoadProfile[Load user profile from Firestore]
+  LoadProfile --> RouteByRole{User role}
+  ParentSignup --> LoadProfile
+  DelegatedSignup --> LoadProfile
+  ChildSignup --> LoadProfile
+  AssistantSignup --> LoadProfile
+  AdminSignup --> LoadProfile
+
+  RouteByRole -->|parent| ParentDashboard[Parent Dashboard]
+  RouteByRole -->|delegated_parent| DelegatedDashboard[Delegated Parent Dashboard]
+  RouteByRole -->|child| ChildDashboard[Child Dashboard]
+  RouteByRole -->|assistant| AssistantDashboard[Assistant Dashboard]
+  RouteByRole -->|admin| AdminDashboard[Admin Dashboard]
+
+  %% Parent path
+  ParentDashboard --> ViewChildren[View children list]
+  ViewChildren --> AddChild{Add child?}
+  AddChild -- Yes --> AddChildForm[Fill child profile form]
+  AddChildForm --> SaveChild[Save child + create child_profiles]
+  SaveChild --> ViewChildren
+  ViewChildren --> SelectChild[Select child dashboard]
+  SelectChild --> AddActivity[Add child activity]
+  AddActivity --> SaveActivity[Save activity document]
+  SaveActivity --> Analytics[Run AI / backend analysis]
+  Analytics --> ShowParentsInsights[Show insights & gamification]
+  ParentDashboard --> Schedules[Open schedules tab]
+  Schedules --> ScheduleAction[Create/update reminder]
+  ScheduleAction --> PushReminder[Push notification flow]
+  ParentDashboard --> DelegatedMgmt[Manage delegated parents]
+  DelegatedMgmt --> CreateDelegated[Create delegated parent account]
+  DelegatedMgmt --> AssignChildren[Assign children to delegated parent]
+  DelegatedMgmt --> InviteFlow[Send invite / onboarding link]
+  ParentDashboard --> Reports[View reports & system analytics]
+
+  %% Delegated parent path
+  DelegatedDashboard --> ViewAssigned[View assigned children]
+  ViewAssigned --> SelectAssigned[Select assigned child]
+  SelectAssigned --> AddDelegatedActivity[Add activity for assigned child]
+  AddDelegatedActivity --> SaveDelegatedActivity[Save delegated activity record]
+  SaveDelegatedActivity --> DelegatedAnalytics[Run child analytics]
+  DelegatedAnalytics --> ShowDelegatedInsights[Show delegated insights]
+  DelegatedDashboard --> ViewDelegationStatus[View delegated permissions / restrictions]
+  DelegatedDashboard --> CannotEditParent[Cannot modify parent role or unassigned children]
+
+  %% Child path
+  ChildDashboard --> ChildStatus[View own status and timeline]
+  ChildStatus --> ChildInsights[View AI insights / tips]
+  ChildDashboard --> ChildReminders[View schedules and reminders]
+
+  %% Assistant path
+  AssistantDashboard --> AssistantView[View assigned child previews]
+  AssistantView --> AssistantInput[Input child activity data]
+  AssistantInput --> SaveAssistantData[Save assistant data]
+  SaveAssistantData --> AssistantAnalytics[Trigger analytics update]
+
+  %% Admin path
+  AdminDashboard --> SystemOverview[View system usage & metrics]
+  AdminDashboard --> ManageDelegatedAdmins[Manage delegated parent accounts]
+  ManageDelegatedAdmins --> AdminCreate[Create / disable delegated accounts]
+  ManageDelegatedAdmins --> AdminAssign[Update assigned children]
+  AdminDashboard --> ReviewInvites[Review invite codes & onboarding]
+  AdminDashboard --> AdminReports[View reports, audit logs, login history]
+  AdminDashboard --> SecuritySettings[Manage permission rules]
+
+  %% Common flows
+  SaveActivity --> RefreshParent[Refresh dashboard data]
+  ShowParentsInsights --> ParentDashboard
+  ShowDelegatedInsights --> DelegatedDashboard
+  ChildInsights --> ChildDashboard
+  AssistantAnalytics --> AssistantDashboard
+  AdminReports --> AdminDashboard
+
+  classDef auth fill:#f8f9fa,stroke:#6c757d;
+  class AuthCheck,AuthScreen,AuthChoice,Signup,Login,Reset,RoleSelect auth;
+  classDef parent fill:#e3f2fd,stroke:#1976d2;
+  class ParentDashboard,ViewChildren,AddChild,AddChildForm,SaveChild,SelectChild,AddActivity,SaveActivity,Analytics,ShowParentsInsights,Schedules,ScheduleAction,PushReminder,DelegatedMgmt,CreateDelegated,AssignChildren,InviteFlow,Reports parent;
+  classDef delegated fill:#fff3e0,stroke:#f57c00;
+  class DelegatedDashboard,ViewAssigned,SelectAssigned,AddDelegatedActivity,SaveDelegatedActivity,DelegatedAnalytics,ShowDelegatedInsights,ViewDelegationStatus,CannotEditParent delegated;
+  classDef child fill:#e8f5e9,stroke:#388e3c;
+  class ChildDashboard,ChildStatus,ChildInsights,ChildReminders child;
+  classDef assistant fill:#f3e5f5,stroke:#8e24aa;
+  class AssistantDashboard,AssistantView,AssistantInput,SaveAssistantData,AssistantAnalytics assistant;
+  classDef admin fill:#ffe0b2,stroke:#fb8c00;
+  class AdminDashboard,SystemOverview,ManageDelegatedAdmins,AdminCreate,AdminAssign,ReviewInvites,AdminReports,SecuritySettings admin;

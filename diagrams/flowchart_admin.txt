@@ -1,0 +1,20 @@
+# Flowchart (Mermaid syntax) - Admin flow
+# Use a Mermaid editor like https://mermaid.live/ to render.
+
+flowchart TD
+  A[Admin opens app] --> B{Authenticated as Admin?}
+  B -- No --> C[Login Admin]
+  C --> D[Verify admin credentials]
+  D --> B
+  B -- Yes --> E[Open Admin Dashboard]
+  E --> F[View system usage overview]
+  E --> G[Manage delegated parents]
+  E --> H[Review activity analytics]
+  G --> I[Create delegated parent account]
+  G --> J[Update delegated parent assignments]
+  E --> K[Review invite / onboarding status]
+  E --> L[View reports & audit logs]
+
+  style F fill:#e8f5e9,stroke:#81c784
+  style G fill:#e3f2fd,stroke:#90caf9
+  style H fill:#fff3e0,stroke:#ffb74d

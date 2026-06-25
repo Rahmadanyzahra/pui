@@ -1,0 +1,25 @@
+@startuml
+' Sequence diagram: User login flow
+actor User as U
+participant App as MobileApp
+participant Backend as API
+database Firestore as DB
+
+U -> MobileApp: Open Login Screen
+U -> MobileApp: Enter credentials (email + password)
+MobileApp -> API: POST /auth/login {email, password}
+API -> DB: Get user by email
+DB --> API: user document
+API -> API: verify password, check bans
+alt success
+  API -> DB: Create session token in sessions collection
+  DB --> API: session token
+  API --> MobileApp: 200 OK + token
+  MobileApp -> MobileApp: store token (secure storage)
+  MobileApp --> U: Navigate to Dashboard
+else failure
+  API --> MobileApp: 401 Unauthorized
+  MobileApp --> U: Show error message
+end
+
+@enduml

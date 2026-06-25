@@ -1,0 +1,20 @@
+# Flowchart (Mermaid syntax) - Delegated Parent flow
+# Use a Mermaid editor like https://mermaid.live/ to render.
+
+flowchart TD
+  A[Delegated Parent opens app] --> B{Authenticated?}
+  B -- No --> C[Login with delegated_parent credentials]
+  C --> D[Verify delegated parent role]
+  D --> B
+  B -- Yes --> E[Open Delegated Parent Dashboard]
+  E --> F[View assigned children only]
+  F --> G[Select assigned child]
+  G --> H[Add activity for child]
+  H --> I[Save delegated activity record]
+  I --> J[Trigger child analytics update]
+  E --> K[View child status and recent insights]
+  E --> L[Cannot modify parent role or unassigned children]
+
+  style H fill:#e8f5e9,stroke:#81c784
+  style K fill:#e3f2fd,stroke:#90caf9
+  style L fill:#ffebee,stroke:#e57373

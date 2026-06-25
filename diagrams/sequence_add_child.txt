@@ -1,0 +1,15 @@
+@startuml
+' Sequence diagram: Add Child flow
+actor User as U
+participant App as MobileApp
+database Firestore as DB
+
+U -> MobileApp: Open Add Child Form
+U -> MobileApp: Fill child data and submit
+MobileApp -> DB: Add document to children collection {name, birthday, parent_uid}
+DB --> MobileApp: documentId
+MobileApp -> DB: Optionally create child_profiles doc with defaults
+DB --> MobileApp: child_profile created
+MobileApp --> U: Show "Child added" and refresh children list
+
+@enduml

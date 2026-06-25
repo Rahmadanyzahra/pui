@@ -1,0 +1,261 @@
+PATARA AI - Updated Diagram Summary
+
+This file consolidates the latest activity diagram, flowchart, ERD, and inferred use case summary from the current repository state.
+
+Source files:
+- diagrams/activity_diagram.txt (PlantUML activity diagram)
+- diagrams/flowchart.txt (Mermaid flowchart)
+- diagrams/flowchart_admin.txt (Mermaid admin flowchart)
+- diagrams/flowchart_parent.txt (Mermaid parent flowchart)
+- diagrams/flowchart_delegated_parent.txt (Mermaid delegated parent flowchart)
+- diagrams/flowchart_full_app.txt (Mermaid full app flowchart)
+- diagrams/erd.txt (PlantUML ERD)
+- diagrams/sequence_* .txt (sequence diagrams for login, add child, invite flow, AI analysis, push notifications)
+
+---
+
+1) ACTIVITY DIAGRAM (PlantUML)
+
+Sections:
+- Authentication: Open app, login/signup, create session or new user.
+- Child management: View children list, add child profile, create child metadata.
+- Activity logging: Open child dashboard, add activities, save activity records.
+- Analytics automation: Run analysis, store analytics/gamification, show AI insights.
+
+@startuml
+' Activity diagram for common user flows
+' Use PlantUML activity diagram import in draw.io or PlantUML server
+
+start
+:Open App;
+if (Authenticated?) then (no)
+  :Show Login/Signup;
+  if (Sign up) then (email)
+    :Create user in users collection;
+    :Send invite if provided;
+  else (login)
+    :Create session token;
+  endif
+endif
+:Open Dashboard;
+partition ParentActions {
+  :View Children list;
+  if (Add Child?) then (yes)
+    :Fill child form;
+    :Create child doc in children;
+    :Create child_profile and default settings;
+  endif
+  :Open Child Dashboard;
+  :Add Activity (feeding/sleep/play);
+  :Store activity in activities collection;
+}
+partition Automation {
+  :Run Analysis (local or backend);
+  :Store analytics in backend_analytics / gamification_data;
+}
+:Show insights (AI Parenting);
+stop
+
+@enduml
+
+---
+
+2) FLOWCHART (Mermaid)
+
+Sections:
+- Authentication flow: app open, login/signup, session creation.
+- Dashboard flow: open dashboard, view children, select child.
+- Activity flow: add activity, save data, trigger analysis, show results.
+- Schedule flow: open schedules, create/update schedule, push reminders.
+
+---
+# Flowchart (Mermaid syntax) - main app flows
+# Paste into a Mermaid editor (e.g., https://mermaid.live/) or tools that support Mermaid.
+
+flowchart TD
+  A[Open App] --> B{Authenticated?}
+  B -- No --> C[Login / Signup]
+  C --> D{Signup or Login}
+  D -->|Signup| E[Create user record]
+  D -->|Login| F[Create session]
+  B -- Yes --> G[Open Dashboard]
+  G --> H[View Children]
+  H --> I[Select Child]
+  I --> J[Add Activity]
+  J --> K[Save to activities]
+  K --> L[Trigger Analysis]
+  L --> M[Update analytics / gamification]
+  M --> N[Show AI insights]
+  G --> O[Open Schedules]
+  O --> P[Create/Update schedule]
+  P --> Q[Push reminders]
+
+  style E fill:#e3f2fd,stroke:#90caf9
+  style F fill:#fff3e0,stroke:#ffb74d
+  style K fill:#e8f5e9,stroke:#81c784
+---
+
+Additional flowcharts:
+- `diagrams/flowchart_admin.txt` — admin overview and delegated account management
+- `diagrams/flowchart_parent.txt` — parent dashboard, child activity, schedules, and delegation setup
+- `diagrams/flowchart_delegated_parent.txt` — delegated parent activity input and assigned-child restrictions
+
+3) ERD (PlantUML)
+
+@startuml
+' ERD for Patara AI (generated from repo scan)
+' Use PlantUML (https://plantuml.com/), paste into a PlantUML-enabled editor or draw.io (Arrange → Insert → Advanced → PlantUML)
+
+entity "users" as users {
+  * uid : string <<PK>>
+  --
+  displayName : string
+  email : string
+  phone : string
+  selectedRole : string
+  familySettings : json
+  preferredLandingDashboard : string
+  createdAt : timestamp
+  updatedAt : timestamp
+}
+
+entity "children" as children {
+  * id : string <<PK>>
+  parent_uid : string <<FK users.uid>>
+  name : string
+  birthday : date
+  umur : int
+  gender : string
+  metadata : json
+  createdAt : timestamp
+  updatedAt : timestamp
+}
+
+entity "child_profiles" as child_profiles {
+  * id : string <<PK>>
+  childId : string <<FK children.id>>
+  bio : text
+  medical : json
+  createdAt : timestamp
+}
+
+entity "activities" as activities {
+  * id : string <<PK>>
+  parent_uid : string <<FK users.uid>>
+  child_id : string <<FK children.id>>
+  type : string
+  start_time : timestamp
+  end_time : timestamp
+  metadata : json
+  value : string
+  createdAt : timestamp
+}
+
+entity "schedules" as schedules {
+  * id : string <<PK>>
+  parent_uid : string <<FK users.uid>>
+  child_id : string <<FK children.id>>
+  title : string
+  cron : string
+  reminder_time : timestamp
+  active : boolean
+  createdAt : timestamp
+}
+
+entity "reports" as reports {
+  * id : string <<PK>>
+  user_ref : string <<FK users.uid>>
+  title : string
+  content : text
+  createdAt : timestamp
+}
+
+entity "gamification_data" as gamification_data {
+  * id : string <<PK>>
+  user_ref : string <<FK users.uid>>
+  points : int
+  badges : json
+  createdAt : timestamp
+}
+
+entity "sessions" as sessions {
+  * token : string <<PK>>
+  user_ref : string <<FK users.uid>>
+  createdAt : timestamp
+  expiresAt : timestamp
+}
+
+entity "push_subscriptions" as push_subscriptions {
+  * id : string <<PK>>
+  user_ref : string <<FK users.uid>>
+  endpoint : string
+  keys : json
+  createdAt : timestamp
+}
+
+entity "invites" as invites {
+  * code : string <<PK>>
+  createdBy : string <<FK users.uid>>
+  email : string
+  used : boolean
+  createdAt : timestamp
+}
+
+entity "connection_tokens" as connection_tokens {
+  * token : string <<PK>>
+  parent_uid : string <<FK users.uid>>
+  parent_id : string
+  createdAt : timestamp
+}
+
+' Relationships
+users ||--o{ children : "owns"
+children ||--o{ child_profiles : "has"
+users ||--o{ activities : "creates"
+children ||--o{ activities : "for"
+users ||--o{ schedules : "creates"
+children ||--o{ schedules : "for"
+users ||--o{ reports : "authors"
+users ||--o{ gamification_data : "has"
+users ||--o{ sessions : "has"
+users ||--o{ push_subscriptions : "has"
+users ||--o{ invites : "issues"
+users ||--o{ connection_tokens : "has"
+
+@enduml
+
+---
+
+4) USE CASE SUMMARY
+
+Primary actors:
+- Parent
+- Child (indirect / tracked user)
+- System / Backend
+
+Core use cases:
+- Parent signs up or logs in to the app
+- Parent adds a child profile and maintains child data
+- Parent logs child activities (feeding, sleep, play, learning)
+- Parent creates and updates schedules with push reminders
+- System stores activities, schedules, and analytics
+- System performs AI analysis and updates gamification metrics
+- Parent views dashboard insights and child status
+- Parent sends or uses invite codes for child/family onboarding
+- System handles push notification subscriptions and connection tokens
+- System records location and screen time data for children
+
+Secondary use cases:
+- Parent reviews reports and analytics history
+- Parent manages family settings and preferred dashboard
+- System maintains session tokens and secure authentication
+
+---
+
+5) NOTES
+
+- This document is generated from the current diagram source files and repository structure.
+- If you want the latest rendered diagrams, use the source files in diagrams/ with PlantUML or Mermaid.
+- `diagrams/activity_diagram.txt` is the newest activity diagram version in PlantUML format.
+- `diagrams/flowchart.txt` is the main system flowchart in Mermaid format.
+- `diagrams/erd.txt` is the current ERD model representing Firestore collections and relationships.

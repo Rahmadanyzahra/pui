@@ -1,0 +1,27 @@
+---
+# Flowchart (Mermaid syntax) - main app flows
+# Paste into a Mermaid editor (e.g., https://mermaid.live/) or tools that support Mermaid.
+
+flowchart TD
+  A[Open App] --> B{Authenticated?}
+  B -- No --> C[Login / Signup]
+  C --> D{Signup or Login}
+  D -->|Signup| E[Create user record]
+  D -->|Login| F[Create session]
+  B -- Yes --> G[Open Dashboard]
+  G --> H[View Children]
+  H --> I[Select Child]
+  I --> J[Add Activity]
+  J --> K[Save to activities]
+  K --> L[Trigger Analysis]
+  L --> M[Update analytics / gamification]
+  M --> N[Show AI insights]
+  G --> O[Open Schedules]
+  O --> P[Create/Update schedule]
+  P --> Q[Push reminders]
+
+  style E fill:#e3f2fd,stroke:#90caf9
+  style F fill:#fff3e0,stroke:#ffb74d
+  style K fill:#e8f5e9,stroke:#81c784
+
+---

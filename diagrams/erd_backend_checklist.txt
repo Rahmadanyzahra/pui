@@ -1,0 +1,52 @@
+ERD Backend Checklist for Patara AI
+
+1. User and authentication
+   - Ensure `users.role` supports parent, delegated_parent, child, assistant, admin.
+   - Store `password_hash` securely; do not store plaintext passwords.
+   - Add `created_at`, `updated_at`, `deleted_at` for audit/soft-delete.
+   - Add session expiration and `revoked` flag for `sessions`.
+   - Add `connection_tokens` for device-based auth with `expires_at` and `revoked`.
+
+2. Child and profile management
+   - Use `children.parent_uid` to connect child records to a parent user.
+   - Keep `child_profiles` separate from `children` for child metadata and medical data.
+   - Protect child metadata with firewalls and rules.
+
+3. Delegation
+   - Implement `delegation_assignments` to map `delegated_parent_uid` to `child_profile_id`.
+   - Track `assigned_by`, `assigned_at`, `permission_scope`, `expires_at`, and `active`.
+   - Disallow delegated parents from editing children they do not own.
+
+4. Activities and analytics
+   - Save `activities` with `parent_uid`, `child_id`, timestamps, metadata, and soft-delete.
+   - Ensure analytics run only on permitted child activity records.
+   - Add indexes on `activities(child_id, start_time)`.
+
+5. Scheduling and reminders
+   - Use `schedules.active` and `dashboard_config` for reminder state.
+   - Add `reminder_time` triggers and push notification pipelines.
+   - Index schedule queries by `parent_uid` and `reminder_time`.
+
+6. Push notifications and invites
+   - Keep `push_subscriptions` unique per `(user_uid, device_id)`.
+   - Store push `endpoint` and `keys` securely.
+   - Track `invites` with unique `code`, `created_by`, `used`, and `expires_at`.
+
+7. Gamification and reporting
+   - Store current gamification state in `gamification_data` and build history separately if needed.
+   - Use `reports` for audit/logging and system analytics.
+
+8. Data modeling and integrity
+   - Use foreign keys consistently and document cascade/soft-delete behavior.
+   - Apply `UNIQUE` constraints for emails and invite codes.
+   - Keep JSON fields for flexible metadata, but avoid storing frequently filtered fields only in JSON.
+
+9. Privacy and security
+   - Avoid storing unnecessary PII.
+   - Use secure encryption/hashing for tokens if required.
+   - Enforce role-based access control in backend and Firestore rules.
+
+10. Migration and deployment
+   - Document database migrations for new tables and indexes.
+   - Confirm the ERD schema maps to actual Firestore document collections or SQL tables.
+   - Add tests for delegated-parent access, child-profile creation, and schedule reminders.

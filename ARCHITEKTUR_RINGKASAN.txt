@@ -1,0 +1,70 @@
+Ringkasan Arsitektur dan Logika Patara AI
+
+1. Struktur Aplikasi
+
+Frontend Flutter:
+- Entry point: lib/main.dart
+- Screens/fitur: lib/features/
+- Reusable widgets: lib/widgets/
+- Service dan integrasi API: lib/services/
+- Model data: lib/models/
+- Utility umum: lib/utils/
+
+Backend Node.js:
+- Router utama dan server: backend/node_backend/index.js
+- Database SQLite: backend/node_backend/db.js
+- Database MySQL: backend/node_backend/db_mysql.js
+- Prediksi pertumbuhan: backend/node_backend/prediction.js
+- Laporan PDF: backend/node_backend/pdf_generator.js
+
+2. Lapisan Frontend
+
+Presentation:
+- Menampilkan layar login, register, dashboard parent/child, health tracking, AI chat, dan notifikasi.
+
+Service:
+- BackendApiService mengelola panggilan HTTP, token, sesi, dan header Authorization.
+- ChildProfileService, ChildFoodService, ReportService, dan LocalNotificationService menangani domain logika khusus.
+
+Domain / Model:
+- Model backend seperti BackendChild, BackendGrowthRecord, BackendFoodItem, dan BackendActivityRecord untuk parse JSON API.
+
+UI:
+- Widget reusable untuk timeline aktivitas, kartu profil dashboard, form input, dan statistik.
+
+3. Alur Data dan Logika
+
+- Login/register: kirim data ke backend, terima token Bearer.
+- Simpan token di FlutterSecureStorage dan preferensi pengguna.
+- Request API berikutnya menggunakan header Authorization.
+- Data anak diambil dari /children, aktivitas dari /activities.
+- Growth tracking lewat /growth/record dan /growth/records/:child_id.
+- Nutrisi lewat /nutrition/foods, /nutrition/food-intake, dan /nutrition/daily-analysis/:child_id/:date.
+- Analitik untuk parent dan child di /analytics/parent dan /analytics/child/:child_id.
+- Chat AI: /ai/chat.
+
+4. Logika Backend
+
+- Autentikasi: session token UUID tersimpan di tabel sessions.
+- Middleware requireAuth memverifikasi token.
+- Hitungan pertumbuhan: BMI, status tinggi/berat, status gizi, dan milestone.
+- Validasi nutrisi berdasarkan rentang usia 1-3 dan 3-5 tahun.
+- Data makanan statis disimpan di FOOD_DATABASE.
+- Endpoint token/invite untuk membuat token, menghubungkan, dan mengecek status.
+
+5. Rekomendasi Arsitektur
+
+Frontend:
+- Pisahkan state management (Provider/Riverpod/Bloc) dari service API.
+- Pertahankan modul layar, widget, service, dan model terpisah.
+
+Backend:
+- Pisahkan route, controller, repository, dan service.
+- Gunakan folder seperti routes/, controllers/, services/, models/ untuk modularitas.
+
+6. Ringkasan Kunci
+
+- Aplikasi ini adalah sistem parenting/childcare dengan dashboard, tracking growth, nutrisi, aktivitas, AI parenting assistant, dan notifikasi.
+- Backend utama adalah Node.js, frontend menggunakan Flutter.
+- Komunikasi data berlangsung lewat REST API dan token auth.
+- Fokus utama adalah manajemen anak, perkembangan, gizi, analitik, dan asisten AI.

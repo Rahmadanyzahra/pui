@@ -1,0 +1,94 @@
+%% Activity Diagram - Patara AI (core flows)
+%% Render with a Mermaid editor (https://mermaid.live)
+flowchart TD
+  Start[App Start] --> AuthCheck{Authenticated?}
+  AuthCheck -- No --> AuthScreen[Show Login / Signup]
+  AuthScreen --> AuthChoice{Signup or Login}
+  AuthChoice -->|Signup| Signup[Create account + choose role]
+  AuthChoice -->|Login| Login[Authenticate credentials]
+  AuthChoice -->|Forgot Password| Reset[Reset password flow]
+
+  Login --> LoadProfile[Load user profile from Firestore]
+  LoadProfile --> RouteByRole{User role}
+  RouteByRole -->|parent| ParentDashboard[Parent Dashboard]
+  RouteByRole -->|delegated_parent| DelegatedDashboard[Delegated Dashboard]
+  RouteByRole -->|child| ChildDashboard[Child Dashboard]
+  RouteByRole -->|assistant| AssistantDashboard[Assistant Dashboard]
+  RouteByRole -->|admin| AdminDashboard[Admin Dashboard]
+
+  %% Parent add child/activity flow
+  ParentDashboard --> ViewChildren[View children list]
+  ViewChildren --> AddChild{Add child?}
+  AddChild -- Yes --> AddChildForm[Fill child profile form]
+  AddChildForm --> SaveChild[Save child + create child_profiles]
+  SaveChild --> ViewChildren
+
+  ViewChildren --> SelectChild[Select child dashboard]
+  SelectChild --> AddActivity[Add child activity]
+  AddActivity --> SaveActivity[Save activity document]
+  SaveActivity --> Analytics[Run AI / backend analysis]
+  Analytics --> ShowParentsInsights[Show insights & gamification]
+  ShowParentsInsights --> ParentDashboard
+
+  %% Delegated parent activity
+  DelegatedDashboard --> ViewAssigned[View assigned children]
+  ViewAssigned --> SelectAssigned[Select assigned child]
+  SelectAssigned --> AddDelegatedActivity[Add delegated activity]
+  AddDelegatedActivity --> SaveDelegatedActivity[Save record]
+  SaveDelegatedActivity --> DelegatedAnalytics[Run analytics]
+  DelegatedAnalytics --> DelegatedDashboard
+
+  %% Assistant flow
+  AssistantDashboard --> AssistantInput[Input child activity data]
+  AssistantInput --> SaveAssistantData[Save assistant data]
+  SaveAssistantData --> AssistantAnalytics[Trigger analytics update]
+  AssistantAnalytics --> AssistantDashboard
+
+  %% Admin flow
+  AdminDashboard --> SystemOverview[View system metrics]
+  AdminDashboard --> ManageDelegatedAdmins[Manage delegated parent accounts]
+  ManageDelegatedAdmins --> AdminCreate[Create / disable accounts]
+  AdminDashboard --> AdminReports[View reports & audit logs]
+
+  %% Common behaviors
+  SaveActivity --> RefreshParent[Refresh dashboard data]
+  SaveDelegatedActivity --> RefreshParent
+  SaveAssistantData --> RefreshParent
+
+classDef auth fill:#f8f9fa,stroke:#6c757d;
+class AuthCheck,AuthScreen,AuthChoice,Signup,Login,Reset,RouteByRole auth;
+@startuml
+' Activity diagram for common user flows
+' Use PlantUML activity diagram import in draw.io or PlantUML server
+
+start
+:Open App;
+if (Authenticated?) then (no)
+  :Show Login/Signup;
+  if (Sign up) then (email)
+    :Create user in users collection;
+    :Send invite if provided;
+  else (login)
+    :Create session token;
+  endif
+endif
+:Open Dashboard;
+partition ParentActions {
+  :View Children list;
+  if (Add Child?) then (yes)
+    :Fill child form;
+    :Create child doc in children;
+    :Create child_profile and default settings;
+  endif
+  :Open Child Dashboard;
+  :Add Activity (feeding/sleep/play);
+  :Store activity in activities collection;
+}
+partition Automation {
+  :Run Analysis (local or backend);
+  :Store analytics in backend_analytics / gamification_data;
+}
+:Show insights (AI Parenting) ;
+stop
+
+@enduml

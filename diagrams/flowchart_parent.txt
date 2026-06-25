@@ -1,0 +1,24 @@
+# Flowchart (Mermaid syntax) - Parent flow
+# Use a Mermaid editor like https://mermaid.live/ to render.
+
+flowchart TD
+  A[Parent opens app] --> B{Authenticated?}
+  B -- No --> C[Login / Signup]
+  C --> D{Signup or Login}
+  D -->|Signup| E[Create parent account]
+  D -->|Login| F[Create session]
+  B -- Yes --> G[Open Parent Dashboard]
+  G --> H[View children list]
+  H --> I[Select child profile]
+  I --> J[Add / update child activity]
+  J --> K[Save activity record]
+  K --> L[Trigger analytics & gamification update]
+  G --> M[Open schedules]
+  M --> N[Create / update reminders]
+  G --> O[Manage delegated parents]
+  O --> P[Assign children to delegated parent]
+  O --> Q[Review delegated access]
+
+  style E fill:#e3f2fd,stroke:#90caf9
+  style F fill:#fff3e0,stroke:#ffb74d
+  style K fill:#e8f5e9,stroke:#81c784

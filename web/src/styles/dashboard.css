@@ -1,0 +1,374 @@
+/* Dashboard Styles */
+.dashboard-container {
+  min-height: 100vh;
+  background: #f5f7fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.dashboard-header {
+  background: white;
+  border-bottom: 1px solid #eee;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  color: #333;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.dashboard-content {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+/* Sections */
+section {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+section h2 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* Analytics Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.insight-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.insight-chip {
+  border-radius: 14px;
+  padding: 18px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+  border: 1px solid rgba(102, 126, 234, 0.12);
+}
+
+.insight-chip span {
+  display: block;
+  color: #718096;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.insight-chip strong {
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.token-section {
+  background: linear-gradient(135deg, #ffffff 0%, #fff7fb 100%);
+}
+
+.token-card {
+  display: grid;
+  gap: 16px;
+}
+
+.token-helper {
+  margin: 0;
+  color: #4b5563;
+}
+
+.token-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: end;
+}
+
+.token-form-row label {
+  display: grid;
+  gap: 8px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.token-select {
+  min-width: 180px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #111827;
+}
+
+.token-message {
+  flex: 1;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.token-output {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px dashed #dbe2ea;
+}
+
+.token-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.token-value {
+  display: block;
+  padding: 14px;
+  border-radius: 12px;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  word-break: break-all;
+}
+
+.token-copy-btn {
+  justify-self: start;
+}
+
+.stat-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 25px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.stat-label {
+  font-size: 14px;
+  opacity: 0.9;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 36px;
+  font-weight: 700;
+}
+
+/* Section Header */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+/* Children Grid */
+.children-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.child-card {
+  background: #f9fafb;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.child-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+}
+
+.child-card h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 20px;
+}
+
+.child-card .age-label {
+  color: #999;
+  margin: 0 0 15px 0;
+  font-size: 14px;
+}
+
+.child-card .btn-primary {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+}
+
+/* New Child Form */
+.new-child-form {
+  background: #f9fafb;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 25px;
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto;
+  gap: 15px;
+  align-items: end;
+}
+
+.new-child-form input {
+  margin-bottom: 0;
+}
+
+.new-child-form .form-group {
+  margin-bottom: 0;
+}
+
+.new-child-form .form-group label {
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+
+.new-child-form .btn-primary,
+.new-child-form .btn-secondary {
+  margin: 0;
+  padding: 10px 20px;
+  width: auto;
+}
+
+/* Activity Section */
+.activity-section {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 30px;
+}
+
+.activity-form {
+  background: #f9fafb;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  align-items: end;
+}
+
+.activity-form .form-group {
+  margin-bottom: 0;
+}
+
+.activity-form .btn-primary {
+  padding: 10px 20px;
+  width: auto;
+  margin: 0;
+}
+
+/* Activities List */
+.history-section {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 30px;
+}
+
+.activities-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.activity-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.activity-type {
+  font-weight: 600;
+  color: #333;
+  min-width: 120px;
+  text-transform: capitalize;
+}
+
+.activity-value {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 18px;
+  min-width: 80px;
+}
+
+.activity-date {
+  color: #999;
+  font-size: 13px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+
+  .dashboard-header h1 {
+    font-size: 24px;
+  }
+
+  .new-child-form,
+  .activity-form {
+    grid-template-columns: 1fr;
+  }
+
+  .new-child-form .btn-primary,
+  .new-child-form .btn-secondary,
+  .activity-form .btn-primary {
+    width: 100%;
+  }
+
+  .activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .section-header button {
+    width: 100%;
+  }
+}

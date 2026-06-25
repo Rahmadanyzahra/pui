@@ -1,0 +1,20 @@
+@startuml
+' Sequence diagram: AI analysis (AI Parenting Insight)
+actor User as U
+participant App as MobileApp
+participant Backend as API
+participant AIService as AI
+database Firestore as DB
+
+U -> MobileApp: Open AI Parenting Insight
+MobileApp -> API: GET /analytics/ai-insight?child_id=123
+API -> DB: Read required activity & profile data
+DB --> API: activities, child_profile
+API -> AI: Request analysis (activities, profile)
+AI --> API: Analysis summary (insights, recommendations)
+API -> DB: Store analysis in backend_analytics or cache
+DB --> API: ack
+API --> MobileApp: 200 OK + analysis
+MobileApp --> U: Render AI Insights (summary, recommendations)
+
+@enduml

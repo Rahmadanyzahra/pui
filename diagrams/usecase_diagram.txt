@@ -1,0 +1,46 @@
+%% Use Case Diagram - Patara AI
+%% Render with a Mermaid editor (https://mermaid.live)
+usecaseDiagram
+  actor Parent
+  actor DelegatedParent as DP
+  actor Child
+  actor Assistant
+  actor Admin
+  actor System
+
+  Parent --> (Signup / Login)
+  Parent --> (View Children)
+  Parent --> (Add Child)
+  Parent --> (Add Activity)
+  Parent --> (Manage Delegated Parents)
+  Parent --> (View Reports)
+  Parent --> (Manage Schedules)
+
+  DP --> (Signup / Login)
+  DP --> (View Assigned Children)
+  DP --> (Add Activity for Assigned Child)
+  DP --> (View Delegation Status)
+
+  Child --> (Signup / Login)
+  Child --> (View Own Status)
+  Child --> (View Insights)
+  Child --> (View Reminders)
+
+  Assistant --> (Login)
+  Assistant --> (Input Activity Data)
+  Assistant --> (View Assigned Previews)
+
+  Admin --> (Manage Delegated Accounts)
+  Admin --> (Review Invites)
+  Admin --> (View Audit Logs)
+  Admin --> (Manage Security Settings)
+
+  System --> (Run Analytics)
+  System --> (Send Push Reminders)
+
+  (Add Activity) ..> (Run Analytics)
+  (Add Activity) ..> (Refresh Dashboard)
+
+%% Notes:
+%% - Actors: Parent, DelegatedParent (DP), Child, Assistant, Admin, System
+%% - Use cases map to features from `flowchart_full_app.txt` in this repo's diagrams folder.

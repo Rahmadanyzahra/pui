@@ -1,0 +1,25 @@
+@startuml
+' Sequence diagram: Invite flow (invites)
+actor Admin as A
+participant Backend as API
+database Firestore as DB
+participant Email as SMTP
+
+A -> API: Create invite (email)
+API -> DB: create invites document {code, email, createdBy}
+DB --> API: docId
+API -> Email: send invite email with code and link
+Email --> API: delivery status
+API -> DB: update invite status
+API --> A: confirm
+
+User -> API: Open invite link
+API -> DB: verify code
+alt valid
+  API -> DB: create user account or link
+  API --> User: success page
+else invalid
+  API --> User: invalid code message
+end
+
+@enduml

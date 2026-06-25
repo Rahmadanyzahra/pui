@@ -1,0 +1,16 @@
+@startuml
+' Sequence diagram: Push Notification flow
+actor System as Sys
+participant Backend as API
+participant FCM as FCM_Service
+database Firestore as DB
+
+Sys -> API: Trigger push event (schedule or manual)
+API -> DB: Read push_subscriptions where user_ref=...
+DB --> API: list of endpoints
+API -> FCM: Send push messages to endpoints
+FCM --> API: delivery receipts
+API -> DB: store push_subscriptions delivery status
+API --> Sys: ack
+
+@enduml

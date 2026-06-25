@@ -1,0 +1,121 @@
+@startuml
+' ERD for Patara AI (generated from repo scan)
+' Use PlantUML (https://plantuml.com/), paste into a PlantUML-enabled editor or draw.io (Arrange → Insert → Advanced → PlantUML)
+
+entity "users" as users {
+  * uid : string <<PK>>
+  --
+  displayName : string
+  email : string
+  phone : string
+  selectedRole : string
+  familySettings : json
+  preferredLandingDashboard : string
+  createdAt : timestamp
+  updatedAt : timestamp
+}
+
+entity "children" as children {
+  * id : string <<PK>>
+  parent_uid : string <<FK users.uid>>
+  name : string
+  birthday : date
+  umur : int
+  gender : string
+  metadata : json
+  createdAt : timestamp
+  updatedAt : timestamp
+}
+
+entity "child_profiles" as child_profiles {
+  * id : string <<PK>>
+  childId : string <<FK children.id>>
+  bio : text
+  medical : json
+  createdAt : timestamp
+}
+
+entity "activities" as activities {
+  * id : string <<PK>>
+  parent_uid : string <<FK users.uid>>
+  child_id : string <<FK children.id>>
+  type : string
+  start_time : timestamp
+  end_time : timestamp
+  metadata : json
+  value : string
+  createdAt : timestamp
+}
+
+entity "schedules" as schedules {
+  * id : string <<PK>>
+  parent_uid : string <<FK users.uid>>
+  child_id : string <<FK children.id>>
+  title : string
+  cron : string
+  reminder_time : timestamp
+  active : boolean
+  createdAt : timestamp
+}
+
+entity "reports" as reports {
+  * id : string <<PK>>
+  user_ref : string <<FK users.uid>>
+  title : string
+  content : text
+  createdAt : timestamp
+}
+
+entity "gamification_data" as gamification_data {
+  * id : string <<PK>>
+  user_ref : string <<FK users.uid>>
+  points : int
+  badges : json
+  createdAt : timestamp
+}
+
+entity "sessions" as sessions {
+  * token : string <<PK>>
+  user_ref : string <<FK users.uid>>
+  createdAt : timestamp
+  expiresAt : timestamp
+}
+
+entity "push_subscriptions" as push_subscriptions {
+  * id : string <<PK>>
+  user_ref : string <<FK users.uid>>
+  endpoint : string
+  keys : json
+  createdAt : timestamp
+}
+
+entity "invites" as invites {
+  * code : string <<PK>>
+  createdBy : string <<FK users.uid>>
+  email : string
+  used : boolean
+  createdAt : timestamp
+}
+
+entity "connection_tokens" as connection_tokens {
+  * token : string <<PK>>
+  parent_uid : string <<FK users.uid>>
+  parent_id : string
+  createdAt : timestamp
+}
+
+' Relationships
+users ||--o{ children : "owns"
+children ||--o{ child_profiles : "has"
+users ||--o{ activities : "creates"
+children ||--o{ activities : "for"
+users ||--o{ schedules : "creates"
+children ||--o{ schedules : "for"
+users ||--o{ reports : "authors"
+users ||--o{ gamification_data : "has"
+users ||--o{ sessions : "has"
+users ||--o{ push_subscriptions : "has"
+users ||--o{ invites : "issues"
+users ||--o{ connection_tokens : "has"
+
+@enduml

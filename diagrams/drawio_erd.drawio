@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net">
+  <diagram name="ERD">
+    <![CDATA[
+    @startuml
+    hide circle
+    skinparam linetype ortho
+    skinparam backgroundColor #F9F9F9
+    skinparam handwritten false
+
+    entity "users" as users {
+      + uid : uuid <<PK>>
+      * email : varchar(255) <<UQ>>
+      * password_hash : varchar(255)
+      * display_name : varchar(255)
+      * phone : varchar(50)
+      * role : varchar(32)
+      * family_settings : json
+      * default_dashboard : varchar(64)
+      * status : varchar(32)
+      * created_at : timestamp
+      * updated_at : timestamp
+      * deleted_at : timestamp
+    }
+
+    entity "children" as children {
+      + id : uuid <<PK>>
+      * parent_uid : uuid <<FK>>
+      * name : varchar(255)
+      * birth_date : date
+      * age : int
+      * gender : varchar(32)
+      * metadata : json
+      * created_at : timestamp
+      * updated_at : timestamp
+      * deleted_at : timestamp
+    }
+
+    entity "child_profiles" as child_profiles {
+      + id : uuid <<PK>>
+      * child_id : uuid <<FK>>
+      * bio : text
+      * medical : json
+      * created_at : timestamp
+      * updated_at : timestamp
+    }
+
+    entity "activities" as activities {
+      + id : uuid <<PK>>
+      * parent_uid : uuid <<FK>>
+      * child_id : uuid <<FK>>
+      * metadata : json
+      * score : varchar(64)
+      * start_time : timestamp
+      * end_time : timestamp
+      * created_at : timestamp
+      * updated_at : timestamp
+      * deleted_at : timestamp
+    }
+
+    entity "schedules" as schedules {
+      + id : uuid <<PK>>
+      * parent_uid : uuid <<FK>>
+      * child_id : uuid <<FK>>
+      * title : varchar(255)
+      * reminder_time : timestamp
+      * active : boolean
+      * created_at : timestamp
+      * updated_at : timestamp
+      * deleted_at : timestamp
+      * dashboard_config : json
+    }
+
+    entity "reports" as reports {
+      + id : uuid <<PK>>
+      * user_uid : uuid <<FK>>
+      * title : varchar(255)
+      * content : text
+      * created_at : timestamp
+    }
+
+    entity "gamification_data" as gamification_data {
+      + id : uuid <<PK>>
+      * user_uid : uuid <<FK>>
+      * points : int
+      * badge : json
+      * created_at : timestamp
+    }
+
+    entity "sessions" as sessions {
+      + token : varchar(255) <<PK>>
+      * user_uid : uuid <<FK>>
+      * created_at : timestamp
+      * expires_at : timestamp
+      * revoked : boolean
+    }
+
+    entity "push_subscriptions" as push_subscriptions {
+      + id : uuid <<PK>>
+      * user_uid : uuid <<FK>>
+      * endpoint : text
+      * keys : json
+      * device_id : varchar(255)
+      * created_at : timestamp
+      * updated_at : timestamp
+    }
+
+    entity "invites" as invites {
+      + code : varchar(100) <<PK>>
+      * created_by : uuid <<FK>>
+      * email : varchar(255)
+      * used : boolean
+      * expires_at : timestamp
+      * created_at : timestamp
+    }
+
+    entity "connection_tokens" as connection_tokens {
+      + token : varchar(255) <<PK>>
+      * user_uid : uuid <<FK>>
+      * device_id : varchar(255)
+      * created_at : timestamp
+      * expires_at : timestamp
+      * revoked : boolean
+    }
+
+    entity "delegation_assignments" as delegation_assignments {
+      + id : uuid <<PK>>
+      * delegated_parent_uid : uuid <<FK>>
+      * child_profile_id : uuid <<FK>>
+      * permission_scope : varchar(128)
+      * assigned_by : uuid <<FK>>
+      * assigned_at : timestamp
+      * expires_at : timestamp
+      * active : boolean
+    }
+
+    users ||--o{ children : "parent"
+    users ||--o{ activities : "created by"
+    users ||--o{ schedules : "owned by"
+    users ||--o{ reports : "created by"
+    users ||--o{ gamification_data : "owns"
+    users ||--o{ sessions : "owns"
+    users ||--o{ push_subscriptions : "owns"
+    users ||--o{ invites : "creates"
+    users ||--o{ connection_tokens : "owns"
+    users ||--o{ delegation_assignments : "delegated parent"
+
+    children ||--o{ child_profiles : "profile"
+    children ||--o{ activities : "subject"
+    children ||--o{ schedules : "subject"
+
+    child_profiles ||--o{ delegation_assignments : "assigned"
+    invites }|..|| users : "created by"
+    activities }|..|| users : "parent user"
+    activities }|..|| children : "child"
+    schedules }|..|| users : "parent user"
+    schedules }|..|| children : "child"
+    gamification_data }|..|| users : "user"
+    sessions }|..|| users : "user"
+    push_subscriptions }|..|| users : "user"
+    connection_tokens }|..|| users : "user"
+    delegation_assignments }|..|| users : "assigned by"
+    delegation_assignments }|..|| child_profiles : "child profile"
+    @enduml
+    ]]>
+  </diagram>
+</mxfile>

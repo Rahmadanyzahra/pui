@@ -1,0 +1,24 @@
+%% Onboarding Flow Diagram - Patara AI
+%% Render with a Mermaid editor (https://mermaid.live)
+flowchart TD
+  InviteFlow[Send Invite / Onboarding Link] --> InviteSent{Invite type}
+  InviteSent -- Email --> InviteEmail[Send email with link]
+  InviteSent -- Code --> InviteCode[Generate invite code]
+  InviteEmail --> RecipientOpen[Recipient opens link]
+  InviteCode --> RecipientEnter[Recipient enters invite code]
+  RecipientOpen --> AcceptInvite[Accept invite and create account]
+  RecipientEnter --> AcceptInvite
+  AcceptInvite --> ChooseRole{Choose role}
+  ChooseRole -->|delegated_parent| DelegatedSetup[Register delegated parent]
+  ChooseRole -->|parent| ParentSetup[Register parent]
+  ChooseRole -->|child| ChildSetup[Register child]
+  DelegatedSetup --> AssignChildren[Assign children or wait for acceptance]
+  ParentSetup --> AddChildren[Add child profiles]
+  ChildSetup --> LinkToParent[Link child to parent via code]
+  AssignChildren --> CompleteOnboarding[Complete onboarding]
+  AddChildren --> CompleteOnboarding
+  LinkToParent --> CompleteOnboarding
+  CompleteOnboarding --> Welcome[Show welcome & tips]
+
+  classDef onboard fill:#e3f2fd,stroke:#1976d2;
+  class InviteFlow,AcceptInvite,ChooseRole,CompleteOnboarding onboard;
