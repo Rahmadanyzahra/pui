@@ -49,3 +49,49 @@ app.*.map.json
 /android/app/release
 parata-2e653-firebase-adminsdk-fbsvc-3f9269be1c.json
 *.json
+
+# Pengujian: koleksi Postman dan ringkasan hasil ikut disimpan (dibutuhkan CI dan sebagai bukti);
+# keluaran mentah yang besar dan rencana ZAP yang sudah terisi token uji tidak.
+!/pengujian/**/*.json
+/pengujian/api/hasil/
+/pengujian/keamanan/hasil/*.terisi.yaml
+/pengujian/perangkat/hasil/
+
+# Rahasia dan data lokal
+android/key.properties
+*.jks
+*.keystore
+backend/*.db
+ios/instance/
+
+# Cadangan lokal sebelum refactor (memuat .env)
+/arsip_sebelum_refactor_*.zip
+
+# Backend disimpan di repo GitHub terpisah (lihat README).
+/backend/node_backend/
+
+# Basis data lokal (berisi akun dan data anak)
+*.db
+*.sqlite
+
+# Hasil build dan arsip lokal
+/dist/
+/pui-clean/
+/arsip_kode_lama.zip
+
+# Dokumen tugas akhir (repo ini publik; dokumen disimpan di luar git)
+/docs/
+/pengujian/
+/BAHAN_JURNAL_TARA.txt
+/ISI_GFORM_TARA.txt
+/KODE_PENTING_LAPORAN_TA.txt
+/LEMBAR_UAT_TARA.txt
+/LEMBAR_VALIDASI_AHLI_TARA.txt
+/PANDUAN_DEMO_DOSEN_TARA.txt
+/child_metric_formulas.txt
+/register_choice_example.dart
+
+# Dependensi Node dan Python lokal
+node_modules/
+/backend/venv/
+__pycache__/

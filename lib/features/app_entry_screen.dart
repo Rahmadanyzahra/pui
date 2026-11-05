@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../services/backend_api_service.dart';
-import 'child_app_screen.dart';
-import 'login_screen.dart';
-import 'menu/five_menu_shell.dart';
+import '../services/role_validation_service.dart';
+import 'change_password_screen.dart';
+import 'onboarding_screen.dart';
 
 class AppEntryScreen extends StatefulWidget {
   const AppEntryScreen({super.key});
@@ -14,6 +14,8 @@ class AppEntryScreen extends StatefulWidget {
 
 class _AppEntryScreenState extends State<AppEntryScreen> {
   late Future<BackendUser?> _userFuture;
+  bool _mustChangePassword = false;
+  bool _showOnboarding = false;
 
   @override
   void initState() {
@@ -23,8 +25,17 @@ class _AppEntryScreenState extends State<AppEntryScreen> {
 
   Future<BackendUser?> _loadUser() async {
     await BackendApiService.initialize();
+    // Selama pemeliharaan, layar pemeliharaan tampil di atas (main.dart) dan sesi tidak disentuh;
+    // pemuatan akun dilanjutkan setelah admin mematikannya.
+    while (await BackendApiService.checkMaintenance()) {
+      await Future<void>.delayed(const Duration(seconds: 15));
+    }
     await BackendApiService.tryAutoRelogin();
-    return BackendApiService.getCurrentUser();
+    _mustChangePassword = await BackendApiService.needsPasswordChange();
+    final user = await BackendApiService.getCurrentUser();
+    // Perkenalan hanya untuk yang belum masuk dan belum pernah melihatnya di perangkat ini.
+    _showOnboarding = user == null && !await onboardingSeen();
+    return user;
   }
 
   @override
@@ -38,65 +49,15 @@ class _AppEntryScreenState extends State<AppEntryScreen> {
           );
         }
 
-        final user = snapshot.data;
-        if (user == null) {
-          return const LoginScreen();
+        if (_showOnboarding) {
+          return OnboardingScreen(onDone: () => setState(() { _showOnboarding = false; }));
         }
 
-        final role = user.role.toLowerCase();
-        if (role == 'parent') {
-          return const FiveMenuShell(
-            childId: null,
-            themeColor: Color(0xFFF06292),
-            titlePrefix: 'Parent',
-            dashboardType: 'parent',
-            initialIndex: 0,
-          );
+        // Masuk dengan password sementara lalu aplikasi ditutup sebelum password baru dibuat.
+        if (snapshot.data != null && _mustChangePassword) {
+          return const ChangePasswordScreen(mustChange: true);
         }
-
-        if (role == 'admin' || role == 'super_admin') {
-          return const Scaffold(
-            body: SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.admin_panel_settings, size: 64),
-                      SizedBox(height: 16),
-                      Text(
-                        'Akses Super Admin',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Role super admin dikelola di web backend. Gunakan akun parent atau delegasi di aplikasi mobile.',
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-
-        if (role == 'delegated_parent') {
-          return const FiveMenuShell(
-            childId: null,
-            themeColor: Color(0xFFFF7043),
-            titlePrefix: 'Delegasi',
-            dashboardType: 'delegated_parent',
-            initialIndex: 0,
-          );
-        }
-
-        return const ChildAppScreen();
+        return RoleValidationService.buildHomeForUser(snapshot.data);
       },
     );
   }

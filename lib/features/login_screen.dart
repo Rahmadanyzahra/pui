@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-import 'register_screen.dart';
-import 'app_entry_screen.dart';
+
+import '../patara/patara_ui.dart';
 import '../services/backend_api_service.dart';
+import 'app_entry_screen.dart';
+import 'change_password_screen.dart';
+import 'forgot_password_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,486 +15,275 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const double _inputHeight = 54;
-  static const double _buttonHeight = 48;
-  static const double _headerToSubtitleGap = 8;
-  static const double _subtitleToFormGap = 20;
-  static const double _fieldGap = 14;
-  static const double _auxGap = 10;
-  static const double _actionGap = 16;
-  static const double _socialGap = 12;
-
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _captchaAnswerController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  final _captchaAnswer = TextEditingController();
+  BackendCaptchaChallenge? _captcha;
+  bool _captchaLoading = true;
+  bool _serverUnreachable = false;
   bool _loading = false;
-  bool _captchaLoading = false;
-  BackendCaptchaChallenge? _captchaChallenge;
-
-  InputDecoration _inputDecoration(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Color(0xFF8A8A8A), fontSize: 14),
-      filled: true,
-      fillColor: const Color(0xFFF4F4F4),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFF06292), width: 1.3),
-      ),
-    );
-  }
-
-  ButtonStyle get _primaryButtonStyle => ElevatedButton.styleFrom(
-    minimumSize: const Size(double.infinity, _buttonHeight),
-    backgroundColor: const Color(0xFFF06292),
-    foregroundColor: Colors.white,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-  );
-
-  Future<void> _loadCaptcha() async {
-    setState(() => _captchaLoading = true);
-    try {
-      final challenge = await BackendApiService.getLoginCaptcha();
-      if (!mounted) return;
-      setState(() {
-        _captchaChallenge = challenge;
-        _captchaAnswerController.clear();
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _captchaChallenge = null;
-      });
-    } finally {
-      if (mounted) setState(() => _captchaLoading = false);
-    }
-  }
-
-  Future<void> _signIn() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-    final captchaAnswer = _captchaAnswerController.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email dan password harus diisi.')),
-      );
-      return;
-    }
-
-    if (_captchaChallenge == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Captcha belum dimuat. Coba muat ulang.')),
-      );
-      return;
-    }
-
-    // If server disabled captcha, skip requiring answer
-    if (!_captchaChallenge!.disabled && captchaAnswer.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Jawab captcha untuk login.')),
-      );
-      return;
-    }
-
-    setState(() => _loading = true);
-
-    try {
-      if (!_captchaChallenge!.disabled) {
-        await BackendApiService.login(
-          email: email,
-          password: password,
-          captchaSessionId: _captchaChallenge!.sessionId,
-          captchaAnswer: captchaAnswer,
-        );
-      } else {
-        // captcha disabled on server; proceed without captcha fields
-        await BackendApiService.login(email: email, password: password);
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Login berhasil!')));
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AppEntryScreen()),
-        (_) => false,
-      );
-    } catch (e) {
-      final message = e.toString().replaceFirst('Exception: ', '');
-      if (message.toLowerCase().contains('captcha')) {
-        await _loadCaptcha();
-      }
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
-    }
-  }
-
-  Future<void> _showForgotPasswordDialog() async {
-    final emailController = TextEditingController(text: _emailController.text);
-    if (!mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Reset Password'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Masukkan email Anda untuk mengirim instruksi reset password.',
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: _inputDecoration('Email'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Jika email terdaftar, instruksi reset akan dikirim.',
-                    ),
-                  ),
-                );
-              },
-              child: const Text('Kirim'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _handleSocialSignIn(String provider) async {
-    // Simple placeholder: show an animated feedback and snackbar.
-    if (!mounted) return;
-    setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$provider Sign-In belum diimplementasikan.')),
-    );
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _captchaAnswerController.dispose();
-    super.dispose();
-  }
+  bool _showPassword = false;
 
   @override
   void initState() {
     super.initState();
+    _email.text = BackendApiService.lastEmail ?? '';
     _loadCaptcha();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFD1C4E9),
-      body: SafeArea(
-        child: Column(
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    _captchaAnswer.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadCaptcha() async {
+    setState(() { _captchaLoading = true; });
+    try {
+      final captcha = await BackendApiService.getLoginCaptcha();
+      if (!mounted) return;
+      setState(() {
+        _captcha = captcha;
+        _serverUnreachable = false;
+        _captchaAnswer.clear();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _captcha = null;
+        _serverUnreachable = true;
+      });
+    } finally {
+      if (mounted) setState(() { _captchaLoading = false; });
+    }
+  }
+
+  bool get _needsCaptcha => _captcha != null && !_captcha!.disabled;
+
+  Future<void> _signIn() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_captcha == null) {
+      showMessage(context, 'Server belum terhubung. Ketuk "Coba lagi" terlebih dahulu.');
+      return;
+    }
+    setState(() { _loading = true; });
+    try {
+      final mustChange = await BackendApiService.login(
+        email: _email.text.trim(),
+        password: _password.text,
+        captchaSessionId: _needsCaptcha ? _captcha!.sessionId : null,
+        captchaAnswer: _needsCaptcha ? _captchaAnswer.text.trim() : null,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => mustChange
+              ? ChangePasswordScreen(mustChange: true, temporaryPassword: _password.text)
+              : const AppEntryScreen(),
+        ),
+        (_) => false,
+      );
+    } catch (error) {
+      final text = errorText(error).replaceFirst('Login gagal: ', '');
+      await _loadCaptcha();
+      if (!mounted) return;
+      showMessage(
+        context,
+        BackendApiService.isConnectionIssue(error)
+            ? 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.'
+            : text.contains('Nama, email')
+            ? 'Email atau password salah.'
+            : text,
+      );
+    } finally {
+      if (mounted) setState(() { _loading = false; });
+    }
+  }
+
+  /// Alamat server hanya perlu diubah saat pengujian, jadi disembunyikan dari layar utama.
+  Future<void> _openServerSettings() async {
+    final controller = TextEditingController(text: BackendApiService.baseUrl);
+    final url = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Alamat server'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              flex: 3,
-              child: Container(
-                alignment: Alignment.center,
-                color: const Color(0xFFD1C4E9),
-                child: Stack(
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.url,
+              decoration: const InputDecoration(border: OutlineInputBorder()),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              BackendApiService.backendUrlHint(),
+              style: const TextStyle(fontSize: 12, color: Colors.black54),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    );
+    if (url == null || url.isEmpty) return;
+    await BackendApiService.setBaseUrl(url);
+    await _loadCaptcha();
+  }
+
+  InputDecoration _decoration(String label, IconData icon, {Widget? suffix}) =>
+      authDecoration(label, icon, suffix: suffix);
+
+  @override
+  Widget build(BuildContext context) {
+    return AuthScaffold(
+      title: 'Selamat datang kembali',
+      subtitle: 'Catat aktivitas dan pantau perkembangan si kecil.',
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text('Masuk ke akun Anda', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 16),
+            if (_serverUnreachable) ...[
+              Container(
+                padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDECEA),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(
                   children: [
-                    Positioned(
-                      left: -80,
-                      top: -30,
-                      child: Container(
-                        width: 180,
-                        height: 180,
-                        decoration: const BoxDecoration(
-                          color: Colors.white60,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
+                    const Icon(Icons.cloud_off, color: Color(0xFFC62828)),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.'),
                     ),
-                    Positioned(
-                      right: -40,
-                      bottom: -30,
-                      child: Container(
-                        width: 150,
-                        height: 150,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                    Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          TweenAnimationBuilder<double>(
-                            tween: Tween(begin: 0.9, end: 1.0),
-                            duration: const Duration(milliseconds: 600),
-                            curve: Curves.easeOutBack,
-                            builder: (context, v, child) {
-                              return Transform.scale(scale: v, child: child);
-                            },
-                            child: Image.asset(
-                              'asset/image/PARATA (2).png',
-                              width: 140,
-                              height: 140,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'deeps',
-                            style: TextStyle(
-                              fontSize: 38,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const Text(
-                            'BEERCAFE',
-                            style: TextStyle(
-                              fontSize: 20,
-                              letterSpacing: 2,
-                              color: Colors.black54,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    TextButton(onPressed: _loadCaptcha, child: const Text('Coba lagi')),
                   ],
                 ),
               ),
+              const SizedBox(height: 14),
+            ],
+            TextFormField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              textInputAction: TextInputAction.next,
+              decoration: _decoration('Email', Icons.email_outlined),
+              validator: (value) =>
+                  (value ?? '').trim().contains('@') ? null : 'Masukkan alamat email Anda',
             ),
-            Expanded(
-              flex: 5,
-              child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+            const SizedBox(height: 14),
+            TextFormField(
+              controller: _password,
+              obscureText: !_showPassword,
+              autofillHints: const [AutofillHints.password],
+              decoration: _decoration(
+                'Password',
+                Icons.lock_outline,
+                suffix: IconButton(
+                  tooltip: _showPassword ? 'Sembunyikan password' : 'Tampilkan password',
+                  icon: Icon(_showPassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() { _showPassword = !_showPassword; }),
                 ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 10,
-                      ),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          minHeight: constraints.maxHeight - 20,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'Sign In',
-                                  style: TextStyle(
-                                    fontSize: 30,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) =>
-                                            const RegisterScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('Register'),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: _headerToSubtitleGap),
-                            const Text(
-                              'Welcome to Patara AI. Please sign in to continue.',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            const SizedBox(height: _subtitleToFormGap),
-                            SizedBox(
-                              height: _inputHeight,
-                              child: TextField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                decoration: _inputDecoration(
-                                  'Email / Username',
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: _fieldGap),
-                            SizedBox(
-                              height: _inputHeight,
-                              child: TextField(
-                                controller: _passwordController,
-                                obscureText: true,
-                                decoration: _inputDecoration('Password'),
-                              ),
-                            ),
-                            const SizedBox(height: _fieldGap),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8F1FA),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: const Color(
-                                    0xFFF06292,
-                                  ).withOpacity(0.18),
-                                ),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Expanded(
-                                        child: Text(
-                                          'Captcha keamanan',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: _captchaLoading
-                                            ? null
-                                            : _loadCaptcha,
-                                        child: _captchaLoading
-                                            ? const SizedBox(
-                                                width: 14,
-                                                height: 14,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : const Text('Muat ulang'),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    (_captchaChallenge?.disabled == true)
-                                        ? 'Captcha dinonaktifkan'
-                                        : (_captchaChallenge?.question ??
-                                              'Captcha belum tersedia'),
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  if (!(_captchaChallenge?.disabled == true))
-                                    SizedBox(
-                                      height: _inputHeight,
-                                      child: TextField(
-                                        controller: _captchaAnswerController,
-                                        keyboardType: TextInputType.number,
-                                        decoration: _inputDecoration(
-                                          'Jawaban captcha',
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: _auxGap),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: _captchaLoading
-                                    ? null
-                                    : _showForgotPasswordDialog,
-                                child: const Text('Forgot Password?'),
-                              ),
-                            ),
-                            const SizedBox(height: _socialGap),
-                            SizedBox(
-                              width: double.infinity,
-                              height: _buttonHeight,
-                              child: ElevatedButton(
-                                onPressed: _loading ? null : _signIn,
-                                style: _primaryButtonStyle,
-                                child: _loading
-                                    ? const CircularProgressIndicator(
-                                        color: Colors.white,
-                                      )
-                                    : const Text(
-                                        'Sign In',
-                                        style: TextStyle(fontSize: 16),
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(height: _actionGap),
-                            SizedBox(
-                              width: double.infinity,
-                              height: _buttonHeight,
-                              child: ElevatedButton.icon(
-                                onPressed: _loading
-                                    ? null
-                                    : () => _handleSocialSignIn('Google'),
-                                style: _primaryButtonStyle,
-                                icon: const Icon(Icons.g_mobiledata, size: 24),
-                                label: const Text('Continue with Google'),
-                              ),
-                            ),
-                            const SizedBox(height: _socialGap),
-                            SizedBox(
-                              width: double.infinity,
-                              height: _buttonHeight,
-                              child: ElevatedButton.icon(
-                                onPressed: _loading
-                                    ? null
-                                    : () => _handleSocialSignIn('Facebook'),
-                                style: _primaryButtonStyle,
-                                icon: const Icon(Icons.facebook, size: 20),
-                                label: const Text('Continue with Facebook'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+              ),
+              validator: (value) => (value ?? '').isEmpty ? 'Masukkan password Anda' : null,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () async {
+                  final email = await Navigator.of(context).push<String>(
+                    MaterialPageRoute(builder: (_) => ForgotPasswordScreen(initialEmail: _email.text.trim())),
+                  );
+                  // Setelah password diganti, emailnya langsung terisi dan soal verifikasi diperbarui.
+                  if (email == null || !mounted) return;
+                  _email.text = email;
+                  _password.clear();
+                  await _loadCaptcha();
+                },
+                child: const Text('Lupa password?'),
+              ),
+            ),
+            if (_needsCaptcha) ...[
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _captchaAnswer,
+                keyboardType: TextInputType.number,
+                decoration: _decoration(
+                  'Verifikasi: berapa ${_captcha!.question.replaceAll('= ?', '').trim()}?',
+                  Icons.verified_user_outlined,
+                  suffix: IconButton(
+                    tooltip: 'Ganti soal',
+                    icon: const Icon(Icons.refresh),
+                    onPressed: _captchaLoading ? null : _loadCaptcha,
+                  ),
                 ),
+                validator: (value) => (value ?? '').trim().isEmpty ? 'Isi jawaban verifikasi' : null,
+                onFieldSubmitted: (_) => _signIn(),
+              ),
+            ],
+            const SizedBox(height: 20),
+            SizedBox(
+              height: 52,
+              child: ElevatedButton(
+                onPressed: _loading ? null : _signIn,
+                child: _loading
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                      )
+                    : const Text('Masuk', style: TextStyle(fontSize: 16)),
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.shield_outlined, size: 16, color: pataraTeal),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Data anak hanya dapat dibuka oleh Anda dan Delegasi yang Anda setujui.',
+                    style: TextStyle(fontSize: 12, color: Colors.black54, height: 1.35),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 26),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text('Belum punya akun?'),
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                  ),
+                  child: const Text('Daftar'),
+                ),
+              ],
+            ),
+            TextButton(
+              onPressed: _openServerSettings,
+              child: const Text(
+                'Pengaturan server',
+                style: TextStyle(fontSize: 12, color: Colors.black45),
               ),
             ),
           ],

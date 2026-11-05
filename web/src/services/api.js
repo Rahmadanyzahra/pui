@@ -8,11 +8,11 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
 class ApiService {
   constructor() {
-    this.token = localStorage.getItem('token');
+    this.token = null;
     this.role = localStorage.getItem('role') || 'parent';
   }
 
-  async request(endpoint, options = {}) {
+  async request(endpoint, options = {}, retryAuth = true) {
     const url = `${API_BASE_URL}${endpoint}`;
     const headers = {
       'Content-Type': 'application/json',
@@ -25,31 +25,39 @@ class ApiService {
 
     const response = await fetch(url, {
       ...options,
+      credentials: 'include',
       headers,
     });
 
     if (!response.ok) {
-      let bodyText = '';
-      try {
-        bodyText = await response.text();
-      } catch (_) {}
+      const bodyText = await response.text().catch(() => '');
       if (response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        this.token = null;
-        this.role = 'parent';
-        window.location.href = '/login';
+        const publicAuthRoute = endpoint === '/api/admin/login' || endpoint === '/api/admin/captcha';
+        if (retryAuth && !publicAuthRoute && endpoint !== '/api/refresh') {
+          const refresh = await fetch(`${API_BASE_URL}/api/refresh`, {
+            method: 'POST',
+            credentials: 'include',
+          });
+          if (refresh.ok) return this.request(endpoint, options, false);
+        }
+        if (!publicAuthRoute) {
+          localStorage.removeItem('admin_session');
+          localStorage.removeItem('role');
+          localStorage.removeItem('token');
+          this.token = null;
+          this.role = 'parent';
+          window.location.href = '/login';
+        }
       }
       const message = `API Error: ${response.status}` + (bodyText ? ` - ${bodyText}` : '');
       throw new Error(message);
     }
 
-    // Try parse JSON, fallback to raw text
+    const bodyText = await response.text();
     try {
-      return await response.json();
-    } catch (e) {
-      const text = await response.text();
-      return text;
+      return JSON.parse(bodyText);
+    } catch {
+      return bodyText;
     }
   }
 
@@ -66,6 +74,35 @@ class ApiService {
       this.role = data.role || 'parent';
       localStorage.setItem('role', this.role);
     }
+    return data;
+  }
+
+  async getAdminCaptcha() {
+    const response = await fetch(`${API_BASE_URL}/api/admin/captcha`, {
+      headers: { 'Cache-Control': 'no-cache' },
+      credentials: 'include',
+    });
+    if (!response.ok) throw new Error('Gagal memuat verifikasi login.');
+    return response.json();
+  }
+
+  async adminLogin(email, password, captchaSessionId, captchaAnswer) {
+    const data = await this.request('/api/admin/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email,
+        password,
+        captcha_session_id: captchaSessionId,
+        captcha_answer: captchaAnswer,
+      }),
+    });
+    if (data.role !== 'super_admin') {
+      throw new Error('Akun tidak memiliki akses super admin.');
+    }
+    this.token = null;
+    this.role = 'super_admin';
+    localStorage.setItem('admin_session', '1');
+    localStorage.setItem('role', this.role);
     return data;
   }
 
@@ -111,6 +148,10 @@ class ApiService {
     return this.request(`/children/${childId}`, { method: 'DELETE' });
   }
 
+  async deleteAdminChild(childId) {
+    return this.request(`/admin/children/${encodeURIComponent(childId)}`, { method: 'DELETE' });
+  }
+
   // Activities
   async logActivity(childId, activityType, value, created_at = undefined) {
     const body = {
@@ -151,8 +192,7 @@ class ApiService {
     if (to) params.push(`to=${encodeURIComponent(to)}`);
     if (params.length) endpoint += `?${params.join('&')}`;
     const url = `${API_BASE_URL}${endpoint}`;
-    const headers = { 'Authorization': `Bearer ${this.token}` };
-    return fetch(url, { headers }).then(response => {
+    return fetch(url, { credentials: 'include' }).then(response => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.blob();
     });
@@ -226,17 +266,17 @@ class ApiService {
   }
 
   async getAdminUserLoginHistory(userId) {
-    return this.request(`/admin/users/${userId}/login-history`);
+    return this.request(`/admin/users/${encodeURIComponent(userId)}/login-history`);
   }
 
   async deleteAdminUserLoginHistory(userId) {
-    return this.request(`/admin/users/${userId}/login-history`, {
+    return this.request(`/admin/users/${encodeURIComponent(userId)}/login-history`, {
       method: 'DELETE',
     });
   }
 
   async deleteAdminUser(userId) {
-    return this.request(`/admin/users/${userId}`, {
+    return this.request(`/admin/users/${encodeURIComponent(userId)}`, {
       method: 'DELETE',
     });
   }
@@ -249,8 +289,29 @@ class ApiService {
     return this.request('/admin/activities');
   }
 
+  async deleteAdminActivity(activityId) {
+    return this.request(`/admin/activities/${encodeURIComponent(activityId)}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getAdminBehaviorEvents({ query, status } = {}) {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (status) params.set('status', status);
+    const suffix = params.size ? `?${params.toString()}` : '';
+    const result = await this.request(`/admin/behavior-events${suffix}`);
+    return result.items || [];
+  }
+
+  async deleteAdminBehaviorEvent(eventId) {
+    return this.request(`/admin/behavior-events/${encodeURIComponent(eventId)}`, {
+      method: 'DELETE',
+    });
+  }
+
   async getAdminChildAnalytics(childId) {
-    return this.request(`/admin/children/${childId}/analytics`);
+    return this.request(`/admin/children/${encodeURIComponent(childId)}/analytics`);
   }
 
   // Growth Prediction & PDF Download
@@ -261,10 +322,7 @@ class ApiService {
   async downloadGrowthPredictionPdf(childId, period = '7day') {
     // Direct URL for PDF download - the browser will handle it as a file download
     const url = `${API_BASE_URL}/api/growth-prediction/${childId}/${period}/download`;
-    const headers = {
-      'Authorization': `Bearer ${this.token}`,
-    };
-    return fetch(url, { headers }).then(response => {
+    return fetch(url, { credentials: 'include' }).then(response => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.blob();
     });
@@ -290,6 +348,11 @@ class ApiService {
   }
 
   logout() {
+    fetch(`${API_BASE_URL}/api/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(() => null);
+    localStorage.removeItem('admin_session');
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     this.token = null;

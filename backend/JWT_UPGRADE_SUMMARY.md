@@ -1,5 +1,7 @@
 # JWT Implementation Summary
 
+> **Role contract:** Any `parent` role examples below are historical. Current app JWTs use `orang_tua` or `delegasi`; old `parent`/`delegated_parent` values are normalized at authentication. See [ROLE_AUTHORIZATION_MODEL.md](../ROLE_AUTHORIZATION_MODEL.md).
+
 ## ✅ Status: Completed
 
 Aplikasi Patara AI telah berhasil di-upgrade dengan **JWT (JSON Web Token)** authentication untuk keamanan yang lebih baik dan scalability yang lebih tinggi.

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardThemeProfile {
-  final String
-  dashboardType; // 'baby', 'toddler', 'balita', 'anak', 'remaja', 'delegated_parent'
+  final String dashboardType; // Dashboard category or canonical account role.
   final Color primaryColor;
   final Color secondaryColor;
   final Color accentColor;
@@ -64,12 +63,14 @@ class DashboardThemeProfile {
     switch (dashboardType) {
       case 'parent':
       case 'delegated_parent':
+      case 'orang_tua':
+      case 'delegasi':
         return DashboardThemeProfile(
           dashboardType: dashboardType,
-          primaryColor: const Color(0xFFF06292),
-          secondaryColor: const Color(0xFFF8BBD0),
-          accentColor: const Color(0xFFE91E63),
-          backgroundColor: const Color(0xFFFFF2FA),
+          primaryColor: const Color(0xFFFF80AB),
+          secondaryColor: const Color(0xFF2C1828),
+          accentColor: const Color(0xFFF06292),
+          backgroundColor: const Color(0xFF090909),
           fontFamily: null,
         );
       case 'baby':

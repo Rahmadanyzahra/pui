@@ -116,7 +116,7 @@ class BackendMenuAnalytics {
 }
 
 class BackendChildProfile {
-  final int id;
+  final String id;
   final String nama;
   final int umur;
 
@@ -128,7 +128,7 @@ class BackendChildProfile {
 
   factory BackendChildProfile.fromJson(Map<String, dynamic> json) {
     return BackendChildProfile(
-      id: _asInt(json['id']),
+      id: (json['id'] ?? '').toString(),
       nama: (json['nama'] as String?) ?? 'Child',
       umur: _asInt(json['umur']),
     );

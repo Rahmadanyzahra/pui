@@ -93,8 +93,8 @@ function formatActivityValue(value) {
         .map(([key, val]) => `${key}:${String(val)}`)
         .join(' • ');
     }
-  } catch (_) {
-    // Keep raw text when value is not JSON.
+  } catch {
+    return raw;
   }
 
   return raw;
@@ -106,6 +106,9 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [children, setChildren] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [behaviorEvents, setBehaviorEvents] = useState([]);
+  const [activitySearch, setActivitySearch] = useState('');
+  const [behaviorSearch, setBehaviorSearch] = useState('');
   const [selectedChildId, setSelectedChildId] = useState(null);
   const [selectedChildDetail, setSelectedChildDetail] = useState(null);
   const [selectedChildInsight, setSelectedChildInsight] = useState(null);
@@ -131,11 +134,12 @@ export default function AdminDashboard() {
     const load = async () => {
       try {
         setLoading(true);
-        const [overviewData, usersData, childrenData, activitiesData] = await Promise.all([
+        const [overviewData, usersData, childrenData, activitiesData, behaviorData] = await Promise.all([
           api.getAdminOverview(),
           api.getAdminUsers(),
           api.getAdminChildren(),
           api.getAdminActivities(),
+          api.getAdminBehaviorEvents(),
         ]);
 
         if (!active) return;
@@ -143,6 +147,7 @@ export default function AdminDashboard() {
         setUsers(usersData);
         setChildren(childrenData);
         setActivities(activitiesData);
+        setBehaviorEvents(behaviorData);
         setError('');
 
         if (childrenData.length > 0) {
@@ -180,7 +185,7 @@ export default function AdminDashboard() {
         setDetailLoading(true);
         const detail = await api.getAdminChildAnalytics(selectedChildId);
         if (active) setSelectedChildDetail(detail);
-      } catch (_) {
+      } catch {
         if (active) setSelectedChildDetail(null);
       } finally {
         if (active) setDetailLoading(false);
@@ -202,16 +207,18 @@ export default function AdminDashboard() {
   const handleRefresh = async () => {
     setLoading(true);
     try {
-      const [overviewData, usersData, childrenData, activitiesData] = await Promise.all([
+      const [overviewData, usersData, childrenData, activitiesData, behaviorData] = await Promise.all([
         api.getAdminOverview(),
         api.getAdminUsers(),
         api.getAdminChildren(),
         api.getAdminActivities(),
+        api.getAdminBehaviorEvents({ query: behaviorSearch.trim() }),
       ]);
       setOverview(overviewData);
       setUsers(usersData);
       setChildren(childrenData);
       setActivities(activitiesData);
+      setBehaviorEvents(behaviorData);
       setError('');
     } catch (err) {
       setError(err.message || 'Gagal memuat data');
@@ -276,7 +283,7 @@ export default function AdminDashboard() {
   const handleDeleteChild = async (child) => {
     if (!window.confirm(`Hapus anak ${child.nama}?`)) return;
     try {
-      await api.deleteChild(child.id);
+      await api.deleteAdminChild(child.id);
       if (selectedChildId === child.id) setSelectedChildId(null);
       await handleRefresh();
     } catch (e) {
@@ -310,6 +317,29 @@ export default function AdminDashboard() {
       await handleRefresh();
     } catch (e) {
       setError(e.message || 'Gagal menghapus akun user');
+    }
+  };
+
+  const handleDeleteActivity = async (activity) => {
+    const confirmed = window.confirm('Hapus catatan aktivitas ini secara permanen?');
+    if (!confirmed) return;
+
+    try {
+      await api.deleteAdminActivity(activity.id);
+      await handleRefresh();
+    } catch (err) {
+      setError(err.message || 'Gagal menghapus aktivitas');
+    }
+  };
+
+  const handleDeleteBehaviorEvent = async (event) => {
+    const confirmed = window.confirm('Hapus catatan perilaku sensitif ini? Tindakan akan masuk ke audit dan insight tidak lagi menghitungnya.');
+    if (!confirmed) return;
+    try {
+      await api.deleteAdminBehaviorEvent(event.id);
+      await handleRefresh();
+    } catch (err) {
+      setError(err.message || 'Gagal menghapus catatan perilaku');
     }
   };
 
@@ -390,7 +420,7 @@ export default function AdminDashboard() {
         if (!alive) return;
         setSelectedChildInsight(ins);
         setSelectedChildAlerts((alerts && alerts.alerts) || []);
-      } catch (_) {
+      } catch {
         if (alive) {
           setSelectedChildInsight(null);
           setSelectedChildAlerts([]);
@@ -422,7 +452,9 @@ export default function AdminDashboard() {
           newOnes.forEach(a => new Notification(`Alert: ${a.type}`, { body: a.message }));
         }
         lastAlerts[key] = alerts;
-      } catch (_) {}
+      } catch {
+        return;
+      }
     };
     const id = setInterval(poll, 60000);
     // initial poll
@@ -485,7 +517,7 @@ export default function AdminDashboard() {
             <span>Users</span>
             <strong>{statLabel(summary.users_count || 0)}</strong>
             <small>
-              {statLabel(summary.parent_count || 0)} parent · {statLabel(summary.delegated_parent_count || 0)} delegasi
+              {statLabel(summary.parent_count ?? summary.orang_tua_count ?? 0)} parent · {statLabel(summary.delegated_parent_count ?? summary.delegasi_count ?? 0)} delegasi
             </small>
           </div>
           <div className="metric-card">
@@ -553,6 +585,130 @@ export default function AdminDashboard() {
           </article>
         </section>
 
+        <section className="panel" id="activity-records">
+          <div className="panel-header">
+            <div>
+              <p className="panel-kicker">Audit Data</p>
+              <h2>Catatan aktivitas aplikasi</h2>
+            </div>
+            <input
+              type="search"
+              aria-label="Cari aktivitas"
+              placeholder="Cari aktivitas, anak, atau isi"
+              value={activitySearch}
+              onChange={(event) => setActivitySearch(event.target.value)}
+            />
+          </div>
+          <div className="table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Jenis</th>
+                  <th>Anak</th>
+                  <th>Isi aktivitas</th>
+                  <th>Waktu</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activities
+                  .filter((activity) => {
+                    const child = children.find((item) => String(item.id) === String(activity.child_id));
+                    const searchable = [activity.activity_type, activity.value, child?.nama, activity.child_id]
+                      .filter(Boolean)
+                      .join(' ')
+                      .toLowerCase();
+                    return searchable.includes(activitySearch.trim().toLowerCase());
+                  })
+                  .map((activity) => {
+                    const child = children.find((item) => String(item.id) === String(activity.child_id));
+                    return (
+                      <tr key={activity.id}>
+                        <td>{activity.activity_type || 'Aktivitas'}</td>
+                        <td>{child?.nama || activity.child_id || '—'}</td>
+                        <td className="activity-value" title={String(activity.value || '')}>
+                          {formatActivityValue(activity.value)}
+                        </td>
+                        <td>{formatDate(activity.created_at)}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="table-action-btn danger"
+                            onClick={() => handleDeleteActivity(activity)}
+                          >
+                            Hapus aktivitas
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="panel" id="behavior-research">
+          <div className="panel-header">
+            <div>
+              <p className="panel-kicker">Dataset Perilaku</p>
+              <h2>Catatan dan validasi caregiver</h2>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type="search"
+                aria-label="Cari catatan perilaku"
+                placeholder="Cari anak, perilaku, atau pemicu"
+                value={behaviorSearch}
+                onChange={(event) => setBehaviorSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') handleRefresh();
+                }}
+              />
+              <button type="button" className="table-action-btn" onClick={handleRefresh}>
+                Cari
+              </button>
+            </div>
+          </div>
+          <div className="table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Anak</th>
+                  <th>Perilaku</th>
+                  <th>Pemicu</th>
+                  <th>Durasi / intensitas</th>
+                  <th>Status</th>
+                  <th>Waktu kejadian</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {behaviorEvents.map((event) => {
+                  const child = children.find((item) => String(item.id) === String(event.child_id));
+                  return (
+                    <tr key={event.id}>
+                      <td>{event.child_name || child?.nama || event.child_id}</td>
+                      <td>{String(event.behavior_type || 'lainnya').replaceAll('_', ' ')}</td>
+                      <td>{event.trigger_text || 'Tidak dicatat'}</td>
+                      <td>{event.duration_minutes == null ? 'Durasi tidak diketahui' : `${event.duration_minutes} menit`} · {event.intensity || 'unknown'}</td>
+                      <td>{event.validation_status || 'pending'}</td>
+                      <td>{formatDate(event.event_at)}</td>
+                      <td>
+                        <button type="button" className="table-action-btn danger" onClick={() => handleDeleteBehaviorEvent(event)}>
+                          Hapus catatan
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {!behaviorEvents.length && (
+                  <tr><td colSpan="7">Belum ada catatan perilaku.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         <section className="panel" id="users">
           <div className="panel-header">
             <div>
@@ -573,7 +729,7 @@ export default function AdminDashboard() {
               </thead>
               <tbody>
                 {users
-                  .filter((user) => ['parent', 'delegated_parent'].includes(String(user.role || '').toLowerCase()))
+                  .filter((user) => ['parent', 'delegated_parent', 'orang_tua', 'delegasi'].includes(String(user.role || '').toLowerCase()))
                   .map((user) => (
                   <tr key={`${user.id}-${user.email}`}>
                     <td>{user.id}</td>

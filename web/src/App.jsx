@@ -1,23 +1,20 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
 import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import ParentDashboard from './pages/ParentDashboard';
-import ChildDashboard from './pages/ChildDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 
 function getSession() {
   const role = localStorage.getItem('role') || 'parent';
   return {
-    token: localStorage.getItem('token'),
+    token: localStorage.getItem('admin_session'),
     role: role === 'admin' ? 'super_admin' : role,
   };
 }
 
 function PublicGate({ children }) {
   const { token, role } = getSession();
-  if (!token) return children;
-  return <Navigate to={role === 'super_admin' ? '/admin' : '/dashboard'} replace />;
+  if (token && role === 'super_admin') return <Navigate to="/admin" replace />;
+  return children;
 }
 
 function ProtectedGate({ children, roles }) {
@@ -28,7 +25,7 @@ function ProtectedGate({ children, roles }) {
   }
 
   if (roles && !roles.includes(role)) {
-    return <Navigate to={role === 'super_admin' ? '/admin' : '/dashboard'} replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -36,8 +33,8 @@ function ProtectedGate({ children, roles }) {
 
 function RootRedirect() {
   const { token, role } = getSession();
-  if (!token) return <Navigate to="/login" replace />;
-  return <Navigate to={role === 'super_admin' ? '/admin' : '/dashboard'} replace />;
+  if (token && role === 'super_admin') return <Navigate to="/admin" replace />;
+  return <Navigate to="/login" replace />;
 }
 
 export default function App() {
@@ -53,30 +50,7 @@ export default function App() {
             </PublicGate>
           }
         />
-        <Route
-          path="/register"
-          element={
-            <PublicGate>
-              <RegisterPage />
-            </PublicGate>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedGate roles={['parent','delegated_parent']}>
-              <ParentDashboard />
-            </ProtectedGate>
-          }
-        />
-        <Route
-          path="/child/:childId"
-          element={
-            <ProtectedGate roles={['parent', 'delegated_parent', 'super_admin']}>
-              <ChildDashboard />
-            </ProtectedGate>
-          }
-        />
+        <Route path="/register" element={<Navigate to="/login" replace />} />
         <Route
           path="/admin"
           element={

@@ -6,6 +6,19 @@ void main() {
   group('Flutter-Backend MySQL Integration', () {
     const String backendUrl = 'http://127.0.0.1:5000';
 
+    // Akun yang dibuat tes dihapus lagi, supaya tidak ikut terhitung sebagai peserta penelitian.
+    Future<void> removeAccount(http.Response registered) async {
+      if (registered.statusCode != 200 && registered.statusCode != 201) return;
+      final token = RegExp(r'access_token=([^;]+)').firstMatch(registered.headers['set-cookie'] ?? '')?.group(1);
+      expect(token, isNotNull, reason: 'register tidak mengembalikan sesi untuk membersihkan akun tes');
+      final request = http.Request('DELETE', Uri.parse('$backendUrl/api/account'))
+        ..headers['Content-Type'] = 'application/json'
+        ..headers['Cookie'] = 'access_token=$token'
+        ..body = jsonEncode({'password': 'Test@123456'});
+      final removed = await request.send().timeout(Duration(seconds: 10));
+      expect(removed.statusCode, 200, reason: 'akun tes tidak terhapus');
+    }
+
     test('Backend API should be responsive', () async {
       try {
         final response = await http
@@ -36,6 +49,7 @@ void main() {
 
         // Expect either success (201/200) - this means backend connected to MySQL and created user
         expect(response.statusCode, anyOf([200, 201, 409]));
+        await removeAccount(response);
       },
     );
 
@@ -49,6 +63,7 @@ void main() {
               body: jsonEncode({
                 'email': 'test@example.com',
                 'password': 'Test@123456',
+                'full_name': 'Integration Test User',
               }),
             )
             .timeout(Duration(seconds: 10));
@@ -89,6 +104,7 @@ void main() {
       // 409 = conflict (user exists - DB query succeeded)
       // 200/201 = user created in MySQL
       expect(registerResponse.statusCode, anyOf([200, 201, 409]));
+      await removeAccount(registerResponse);
     });
   });
 }
